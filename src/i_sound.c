@@ -74,6 +74,24 @@ void I_SoundDelTimer( void );
 #define MUSSAMPLERATE 44100
 #define SAMPLESIZE		2   	// 16bit
 
+
+
+
+//fluidsynth stuff
+fluid_settings_t *settings;
+fluid_synth_t *synth;
+fluid_audio_driver_t *adriver;
+fluid_player_t *player = NULL;
+sfSoundStream* midiStream;
+
+#define SFMIDI_LOADERFRAMES 1024
+static char midi[1024*1024];
+
+const int outputSize = SFMIDI_LOADERFRAMES * 2;
+
+int midiLength;
+
+
 // The actual lengths of all sound effects.
 int 		lengths[NUMSFX];
 
@@ -151,14 +169,14 @@ void I_SetSfxVolume(int volume)
 
 #include <SFML/Audio.h>
 sfSound* sounds[NUMSFX];
-sfSound* music;
+// sfSound* music;
 
 int cursong = -1;
 
 void I_SetMusicVolume(int volume)
 {
   snd_MusicVolume = volume;
-  sfSound_setVolume(music, (100.0 / 15) * (float)volume);
+  sfSoundStream_setVolume(midiStream, (100.0 / 15) * (float)volume);
 }
 
 
@@ -222,10 +240,18 @@ int I_SoundIsPlaying(int handle)
 }
 
 
-
-
 void I_UpdateSound( void )
 {
+  int doneplaying = fluid_player_get_status(player) == FLUID_PLAYER_DONE;
+
+
+  if(doneplaying)
+  {
+    printf("ligma balls\n");
+    fluid_player_seek(player, 0);
+    fluid_player_play(player);
+    sfSoundStream_play(midiStream); 
+  }
 }
 
 void I_ShutdownSound(void)
@@ -272,36 +298,44 @@ I_InitSound()
 
 
 
-
-//fluidsynth stuff
-fluid_settings_t *settings;
-fluid_synth_t *synth;
-fluid_audio_driver_t *adriver;
-
 void I_LoadSoundFont(char* filename)
 {
-  int sfont_id = fluid_synth_sfload(synth, filename, 1);
+  fluid_synth_sfload(synth, filename, 1);
+}
+
+
+static sfInt16* vec = NULL;
+
+sfBool sfMidiOnGetData(sfSoundStreamChunk* chunk, void* data)
+{
+  chunk->sampleCount = SFMIDI_LOADERFRAMES;
+
+  int read = fluid_synth_write_s16(synth, SFMIDI_LOADERFRAMES / 2, vec, 0, 2, vec, 1, 2);
+
+  if(!chunk->samples)
+    chunk->samples = vec;
+}
+
+void sfMidiOnSeek(sfTime time, void* data)
+{
+  //this doesn't really do anything but it doesn't let you pass NULL, yay dummy function!
 }
 
 void I_InitMusic(void)
 {
-  music = sfSound_create();
-  settings = new_fluid_settings();
-  int i, key;
   settings = new_fluid_settings();
 
-
-  // since this is a non-realtime scenario, there is no need to pin the sample data
-
-
+  midiStream = sfSoundStream_create(&sfMidiOnGetData, &sfMidiOnSeek, 2, MUSSAMPLERATE, NULL);  
+  
   synth = new_fluid_synth(settings);
   fluid_synth_set_sample_rate(synth, MUSSAMPLERATE);
+  
 
   fluid_settings_setstr(settings, "audio.driver", "alsa");
   fluid_settings_setint(settings, "audio.period-size", 0);
 
 
-  
+  vec = malloc(outputSize);
 
 
 }
@@ -313,32 +347,43 @@ static int	musicdies=-1;
 
 
 int songid = 0;
+
+
 void I_PlaySong(int handle, int looping)
 {
-  
-  printf("playing song %d\n", handle);
-  musicdies = gametic + TICRATE*30;
-  cursong = handle;
-  sfSound_setLoop(music, looping);
-  sfSound_play(music);
-  
+  if(player)
+    delete_fluid_player(player);
+
+  player = new_fluid_player(synth);
+
+  fluid_player_add_mem(player, midi, midiLength);
+  fluid_player_play(player);
+
+  sfSoundStream_play(midiStream); 
+  sfSoundStream_setLoop(midiStream, looping);
+
+
+  // fluid_player_join(player);
 }
 
 void I_PauseSong (int handle)
 {
-  sfSound_pause(music);
+  // sfSound_pause(music);
+  sfSoundStream_pause(midiStream);
 }
 
 
 
 void I_ResumeSong (int handle)
 {
-  sfSound_play(music);
+  // sfSound_play(music);
 }
 
 void I_StopSong(int handle)
 {
-  sfSound_stop(music);
+  // sfSound_stop(music);
+  sfSoundStream_stop(midiStream);
+  // fluid_player_join(player);
 }
 
 void I_UnRegisterSong(int handle)
@@ -346,60 +391,6 @@ void I_UnRegisterSong(int handle)
   // UNUSED.
   handle = 0;
 }
-
-
-
-void MidiShit(sfInt16* vec)
-{ 
-  music = sfSound_create();
-  sfSoundBuffer* sbuffer = sfSoundBuffer_createFromSamples(vec, cvector_size(vec), 2, MUSSAMPLERATE);
-  sfSound_setBuffer(music, sbuffer);
-  I_SetMusicVolume(snd_MusicVolume);
-  cvector_free(vec);
-}
-
-#define SFMIDI_LOADERFRAMES 1024
-
-void ConvertMidiToPcm(sfInt16* vec, char* midi, int length)
-{
-  int dataSize;
-  int read;
-  int outputsize = SFMIDI_LOADERFRAMES*2;
-
-
-  for(int i = 0; i < outputsize; i++)
-    cvector_push_back(vec, 0);
-
-  fluid_player_t *player = new_fluid_player(synth);
-  
-  fluid_player_add_mem(player, midi, length);
-  fluid_player_play(player);
-  while(true)
-  {
-    read = fluid_synth_write_s16(synth, SFMIDI_LOADERFRAMES, &vec[dataSize], 0, 2, &vec[dataSize], 1, 2);
-  
-    if (read == FLUID_FAILED ||
-        fluid_player_get_status(player) != FLUID_PLAYER_PLAYING)
-      break;
-
-    dataSize += SFMIDI_LOADERFRAMES * 2;
-
-    if(outputsize - dataSize < SFMIDI_LOADERFRAMES * 2)
-    {
-      outputsize += SFMIDI_LOADERFRAMES * 2;
-
-      for(int i = cvector_size(vec); i < outputsize; i++)
-      {
-        cvector_push_back(vec, 0);
-      }
-    }
-  }
-  fluid_player_join(player);
-  // delete_fluid_player(player);
-  MidiShit(vec);
-
-}
-
 
 char musheader[3] = {'M','U','S'};
 boolean IsMus(char* data)
@@ -416,19 +407,13 @@ boolean IsMus(char* data)
 }
 
 int I_RegisterSong(void *data, int lumplength)
-{
-  sfInt16* vec = NULL;
-  
+{  
   if(IsMus(data))
   {
-    static char midi[1024*1024];// = malloc(1024 * 1024);
-    int length;
-    Mus2Midi(data, midi, &length);
-    ConvertMidiToPcm(vec, midi, length);
+    Mus2Midi(data, midi, &midiLength);
   }else{
-    ConvertMidiToPcm(vec, data, lumplength);
   }
-  
+
   songid++;
   return songid - 1;
 }

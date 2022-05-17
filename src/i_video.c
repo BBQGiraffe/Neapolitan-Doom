@@ -78,7 +78,7 @@ void I_ShutdownGraphics(void)
 //
 void I_StartFrame (void)
 {
-    // er?
+    // TODO: do joystick things here
 
 }
 
@@ -200,8 +200,6 @@ static byte	colors[768];
 
 void I_FinishUpdate (void)
 {
-
-
     	byte argb_buffer[SCREENWIDTH * SCREENHEIGHT * 4];
 		for(int i = 0; i < SCREENWIDTH * SCREENHEIGHT; i++)
 		{
@@ -273,5 +271,4 @@ void I_InitGraphics(void)
 	image = sfSprite_create();
 	
 	screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
-
 }

@@ -481,7 +481,6 @@ menuitem_t SoundMenu[] =
         {-1, "", 0},
         {2, "M_SNDPCH", M_SfxPitch, 'p'},
         {-1, "", 0}};
-
 menu_t SoundDef =
     {
         sound_end + 1,

@@ -132,14 +132,6 @@ void I_WaitVBL(int count)
 #endif
 }
 
-void I_BeginRead(void)
-{
-}
-
-void I_EndRead(void)
-{
-}
-
 byte*	I_AllocLow(int length)
 {
     byte*	mem;

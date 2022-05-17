@@ -54,11 +54,6 @@ sfSprite* image;
 sfEvent event;
 extern int lastPressedKey;
 
-// Fake mouse handling.
-// This cannot work properly w/o DGA.
-// Needs an invisible mouse cursor at least.
-boolean		grabMouse;
-
 float windowScale = 1;
 
 //convert sfKey to ascii
@@ -72,7 +67,6 @@ void I_ShutdownGraphics(void)
 {
 	if(window)
 	{
-		// sfRenderWindow_close(window);
 		sfRenderWindow_destroy(window);
 	}
 }
@@ -198,15 +192,6 @@ void I_StartTic (void)
 
 }
 
-
-//
-// I_UpdateNoBlit
-//
-void I_UpdateNoBlit (void)
-{
-    // what is this?
-}
-
 //
 // I_FinishUpdate
 //
@@ -271,11 +256,6 @@ void I_InitGraphics(void)
     firsttime = 0;
 
     signal(SIGINT, (void (*)(int)) I_Quit);
-
-
-    // check if the user wants to grab the mouse (quite unnice)
-    grabMouse = !!M_CheckParm("-grabmouse");
-
   
 	printf("starting sfwindow..\n");
 

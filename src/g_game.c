@@ -1595,6 +1595,44 @@ void G_DeferedPlayDemo (char* name)
     gameaction = ga_playdemo; 
 } 
  
+
+typedef enum DemoVersion
+{
+    DEMO_19 = 109
+}DemoVersion;
+
+
+void HandleDemo_Version109(byte* demo_p, skill_t* skill, int* i, int* episode, int* map)
+{
+    *skill = *demo_p++; 
+    *episode = *demo_p++; 
+    *map = *demo_p++; 
+    deathmatch = *demo_p++;
+    respawnparm = *demo_p++;
+    fastparm = *demo_p++;
+    nomonsters = *demo_p++;
+    consoleplayer = *demo_p++;
+	
+    for (*i=0 ; *i<MAXPLAYERS ; *i++) 
+	playeringame[*i] = *demo_p++; 
+}
+
+void G_HandleDemo(byte* demo_p, skill_t* skill, int* i, int* episode, int* map)
+{
+    byte version = *demo_p++;
+
+    switch (version)
+    {
+    case DEMO_19:
+        HandleDemo_Version109(demo_p, skill, i, episode, map);
+        break;
+    
+    default:
+        fprintf( stderr, "Demo is from an unsupported game version(%d)!\n", version);
+        break;
+    }
+}
+
 void G_DoPlayDemo (void) 
 { 
     skill_t skill; 
@@ -1602,24 +1640,9 @@ void G_DoPlayDemo (void)
 	 
     gameaction = ga_nothing; 
     demobuffer = demo_p = W_CacheLumpName (defdemoname, PU_STATIC); 
-    if ( *demo_p++ != VERSION)
-    {
-      fprintf( stderr, "Demo is from a different game version!\n");
-      gameaction = ga_nothing;
-      return;
-    }
+    G_HandleDemo(demo_p, &skill, &i, &episode, &map);
     
-    skill = *demo_p++; 
-    episode = *demo_p++; 
-    map = *demo_p++; 
-    deathmatch = *demo_p++;
-    respawnparm = *demo_p++;
-    fastparm = *demo_p++;
-    nomonsters = *demo_p++;
-    consoleplayer = *demo_p++;
-	
-    for (i=0 ; i<MAXPLAYERS ; i++) 
-	playeringame[i] = *demo_p++; 
+    
     if (playeringame[1]) 
     { 
 	netgame = true; 

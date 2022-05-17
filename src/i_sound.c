@@ -247,7 +247,6 @@ void I_UpdateSound( void )
 
   if(doneplaying)
   {
-    printf("ligma balls\n");
     fluid_player_seek(player, 0);
     fluid_player_play(player);
     sfSoundStream_play(midiStream); 
@@ -412,6 +411,8 @@ int I_RegisterSong(void *data, int lumplength)
   {
     Mus2Midi(data, midi, &midiLength);
   }else{
+    memcpy(midi, data, lumplength);
+    midiLength = lumplength;
   }
 
   songid++;

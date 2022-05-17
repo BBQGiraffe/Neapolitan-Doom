@@ -72,7 +72,8 @@ void I_ShutdownGraphics(void)
 {
 	if(window)
 	{
-		sfRenderWindow_close(window);
+		// sfRenderWindow_close(window);
+		sfRenderWindow_destroy(window);
 	}
 }
 

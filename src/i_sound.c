@@ -332,14 +332,13 @@ void I_InitMusic(void)
 
   fluid_settings_setstr(settings, "audio.driver", "alsa");
   fluid_settings_setint(settings, "audio.period-size", 0);
-
-
   vec = malloc(outputSize);
-
-
 }
 
-void I_ShutdownMusic(void)	{ }
+void I_ShutdownMusic(void)
+{
+  
+}
 
 static int	looping=0;
 static int	musicdies=-1;

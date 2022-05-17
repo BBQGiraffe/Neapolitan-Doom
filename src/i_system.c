@@ -114,9 +114,9 @@ void I_Quit (void)
     D_QuitNetGame ();
     I_ShutdownSound();
     I_ShutdownMusic();
-    M_SaveDefaults ();
+    // M_SaveDefaults ();
     I_ShutdownGraphics();
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 void I_WaitVBL(int count)

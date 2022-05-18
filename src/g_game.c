@@ -1508,20 +1508,19 @@ void G_ReadDemoTiccmd (ticcmd_t* cmd)
 { 
     if (*demo_p == DEMOMARKER) 
     {
-	// end of demo data stream 
-	G_CheckDemoStatus (); 
-	return; 
-    } 
+        // end of demo data stream 
+        G_CheckDemoStatus (); 
+        return; 
+    }
     cmd->forwardmove = ((signed char)*demo_p++); 
     cmd->sidemove = ((signed char)*demo_p++); 
     cmd->angleturn = ((unsigned char)*demo_p++)<<8; 
     cmd->buttons = (unsigned char)*demo_p++; 
-} 
-
+}
 
 void G_WriteDemoTiccmd (ticcmd_t* cmd) 
-{ 
-    if (gamekeydown['q'])           // press q to end demo recording 
+{
+    if (gamekeydown[sfKeyQ])           // press q to end demo recording 
 	G_CheckDemoStatus (); 
     *demo_p++ = cmd->forwardmove; 
     *demo_p++ = cmd->sidemove; 
@@ -1530,10 +1529,10 @@ void G_WriteDemoTiccmd (ticcmd_t* cmd)
     demo_p -= 4; 
     if (demo_p > demoend - 16)
     {
-	// no more space 
-	G_CheckDemoStatus (); 
-	return; 
-    } 
+        // no more space 
+        G_CheckDemoStatus (); 
+        return; 
+    }
 	
     G_ReadDemoTiccmd (cmd);         // make SURE it is exactly the same 
 } 
@@ -1598,7 +1597,8 @@ void G_DeferedPlayDemo (char* name)
 
 typedef enum DemoVersion
 {
-    DEMO_19 = 109
+    DEMO_19 = 109,
+    DEMO_110 = 110
 }DemoVersion;
 
 
@@ -1626,6 +1626,9 @@ void G_HandleDemo(byte* demo_p, skill_t* skill, int* episode, int* map)
     case DEMO_19:
         HandleDemo_Version109(demo_p, skill, episode, map);
         break;
+    case DEMO_110:
+        HandleDemo_Version109(demo_p, skill, episode, map);
+        break;
     
     default:
         fprintf( stderr, "Demo is from an unsupported game version(%d)!\n", version);
@@ -1640,10 +1643,7 @@ void G_DoPlayDemo (void)
 	 
     gameaction = ga_nothing; 
     demobuffer = demo_p = W_CacheLumpName (defdemoname, PU_STATIC); 
-    G_HandleDemo(demo_p, &skill, &episode, &map);
-
-    printf("loading demo: {E%dM%d, SKILL: %d}\n", episode, map, skill);
-    
+    G_HandleDemo(demo_p, &skill, &episode, &map);    
     
     if (playeringame[1]) 
     { 
@@ -1717,11 +1717,11 @@ boolean G_CheckDemoStatus (void)
  
     if (demorecording) 
     { 
-	*demo_p++ = DEMOMARKER; 
-	M_WriteFile (demoname, demobuffer, demo_p - demobuffer); 
-	Z_Free (demobuffer); 
-	demorecording = false; 
-	I_Error ("Demo %s recorded",demoname); 
+        *demo_p++ = DEMOMARKER; 
+        M_WriteFile (demoname, demobuffer, demo_p - demobuffer); 
+        Z_Free (demobuffer); 
+        demorecording = false; 
+        I_Error ("Demo %s recorded",demoname); 
     } 
 	 
     return false; 

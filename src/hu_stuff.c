@@ -100,6 +100,8 @@ boolean			message_dontfuckwithme;
 static boolean		message_nottobefuckedwith;
 
 static hu_stext_t	w_message;
+static hu_stext_t  automapStats;
+
 static int		message_counter;
 
 extern int		showMessages;
@@ -442,6 +444,11 @@ void HU_Start(void)
 		       HU_TITLEX, HU_TITLEY,
 		       hu_font,
 		       HU_FONTSTART);
+
+    HUlib_initTextLine(&automapStats,
+		       HU_TITLEX, HU_TITLEY,
+		       hu_font,
+		       HU_FONTSTART);
     
     switch ( gamemode )
     {
@@ -480,6 +487,19 @@ void HU_Start(void)
 	HUlib_initIText(&w_inputbuffer[i], 0, 0, 0, 0, &always_off);
 
     headsupactive = true;
+
+
+
+
+    //Draw Monster Kills
+    HUlib_initSText(&w_message,
+		    HU_MSGX, HU_MSGY+1, HU_MSGHEIGHT,
+		    hu_font,
+		    HU_FONTSTART, &message_on);
+
+    s = "Kills: 69";
+    while (*s)
+	    HUlib_addCharToTextLine(&automapStats, *(s++));
 
 }
 

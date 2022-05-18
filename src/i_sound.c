@@ -84,7 +84,7 @@ fluid_audio_driver_t *adriver;
 fluid_player_t *player = NULL;
 sfSoundStream* midiStream;
 
-#define SFMIDI_LOADERFRAMES 1024
+#define SFMIDI_LOADERFRAMES 2048
 static char midi[1024*1024];
 
 const int outputSize = SFMIDI_LOADERFRAMES * 2;
@@ -202,7 +202,8 @@ I_StartSound
   int		priority )
 {
   sfSound* sound = sounds[id];
-  sfSound_setVolume(sound,  (100.0 / 15.0) * (float)snd_SfxVolume);
+  sfSound_setVolume(sound,  (100.0 / 15.0) * (float)vol);
+  
   if(snd_DoPitchShift)
   {
     sfSound_setPitch(sound, (1.0 / 128.0) * (float)pitch);

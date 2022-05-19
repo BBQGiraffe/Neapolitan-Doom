@@ -66,9 +66,7 @@ int sfKeyAscii(void)
 void I_ShutdownGraphics(void)
 {
 	if(window)
-	{
 		sfRenderWindow_destroy(window);
-	}
 }
 
 
@@ -79,7 +77,6 @@ void I_ShutdownGraphics(void)
 void I_StartFrame (void)
 {
     // TODO: do joystick things here
-
 }
 
 static int	lastmousex = 0;
@@ -88,7 +85,7 @@ boolean		mousemoved = false;
 
 void PreserveAspectRatio()
 {
-	float aspect = 320.0 / 240.0;
+	float aspect = SCREENWIDTH / (SCREENHEIGHT * 1.2);
 	unsigned int m_width = event.size.width;
 	unsigned int m_height = event.size.height;
 	float new_width = aspect * m_height;
@@ -116,7 +113,7 @@ void PreserveAspectRatio()
 		sfView_setViewport(view, rect);
     }
 
-	windowScale = (1.0/320.0) * sfView_getSize(view).x;// height;
+	windowScale = (1.0/SCREENWIDTH) * sfView_getSize(view).x;// height;
 
 	sfRenderWindow_setView(window, view);
 }
@@ -200,32 +197,24 @@ static byte	colors[768];
 
 void I_FinishUpdate (void)
 {
-    	byte argb_buffer[SCREENWIDTH * SCREENHEIGHT * 4];
-		for(int i = 0; i < SCREENWIDTH * SCREENHEIGHT; i++)
-		{
-			byte colorIndex = screens[0][i];
-            byte r = colors[(3 * colorIndex)];
-            byte g = colors[(3 * colorIndex) + 1];
-            byte b = colors[(3 * colorIndex) + 2];
+    byte argb_buffer[SCREENWIDTH * SCREENHEIGHT * 4];
+	for(int i = 0; i < SCREENWIDTH * SCREENHEIGHT; i++)
+	{
+		unsigned short colorIndex = 3 * screens[0][i];
+		byte* c = &colors[colorIndex];
 
-			argb_buffer[4 * i] = r;
-            argb_buffer[4 * (i) + 1] = g;
-            argb_buffer[4 * (i) + 2] = b;
-            argb_buffer[4 * (i) + 3] = 255;
-		}
+		unsigned long pixelIndex = 4 * i;
+		argb_buffer[pixelIndex++] = *c++;
+        argb_buffer[pixelIndex++] = *c++;
+        argb_buffer[pixelIndex++] = *c++;
+        argb_buffer[pixelIndex++] = 255;
+	}
 
-		sfTexture_updateFromPixels(texture, argb_buffer, SCREENWIDTH, SCREENHEIGHT, 0, 0);
-		sfSprite_setTexture(image, texture, true);
+	sfTexture_updateFromPixels(texture, argb_buffer, SCREENWIDTH, SCREENHEIGHT, 0, 0);
+	sfSprite_setTexture(image, texture, true);
 
-		//scale sprite to fill screen
-		sfVector2f spritescale;
-		spritescale.x = 1;
-		spritescale.y = 1.2;
-
-		sfSprite_setScale(image, spritescale);
-		sfRenderWindow_drawSprite(window, image, NULL);
-		sfRenderWindow_display(window);
-
+	sfRenderWindow_drawSprite(window, image, NULL);
+	sfRenderWindow_display(window);
 }
 
 
@@ -269,6 +258,13 @@ void I_InitGraphics(void)
 	texture = sfTexture_create(SCREENWIDTH, SCREENHEIGHT);
 
 	image = sfSprite_create();
+
+	//apply aspect ratio correction
+	sfVector2f spritescale;
+	spritescale.x = 1;
+	spritescale.y = 1.2;
+
+	sfSprite_setScale(image, spritescale);
 	
 	screens[0] = (unsigned char *) malloc (SCREENWIDTH * SCREENHEIGHT);
 }

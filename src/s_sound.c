@@ -40,8 +40,6 @@ static const char
 
 #include "doomstat.h"
 
-#define S_MAX_VOLUME 127
-
 // when to clip out sounds
 // Does not fit the large outdoor areas.
 #define S_CLIPPING_DIST (1200 * 0x10000)
@@ -182,6 +180,7 @@ void S_Start(void)
         mnum = mus_runnin + gamemap - 1;
     else
     {
+        //TODO: fix this mess lmaoooo
         int spmus[] =
             {
                 // Song - Who? - Where?
@@ -398,26 +397,6 @@ void S_UpdateSounds(void *listener_p)
     channel_t *c;
 
     mobj_t *listener = (mobj_t *)listener_p;
-
-    // Clean up unused data.
-    // This is currently not done for 16bit (sounds cached static).
-    // DOS 8bit remains.
-    /*if (gametic > nextcleanup)
-    {
-	for (i=1 ; i<NUMSFX ; i++)
-	{
-	    if (S_sfx[i].usefulness < 1
-		&& S_sfx[i].usefulness > -1)
-	    {
-		if (--S_sfx[i].usefulness == -1)
-		{
-		    Z_ChangeTag(S_sfx[i].data, PU_CACHE);
-		    S_sfx[i].data = 0;
-		}
-	    }
-	}
-	nextcleanup = gametic + 15;
-    }*/
 
     for (cnum = 0; cnum < numChannels; cnum++)
     {

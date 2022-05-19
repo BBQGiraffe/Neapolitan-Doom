@@ -7,6 +7,8 @@
         "s_sound.h": "c",
         "ranges": "c",
         "*.tcc": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "doomdef.h": "c",
+        "types.h": "c"
     }
 }

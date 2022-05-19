@@ -24,57 +24,23 @@
 static const char
 rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
 #include "mus2mid.h"
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <math.h>
-#include "cvector.h"
-#include <sys/time.h>
-#include <sys/types.h>
 #include <errno.h>
-#ifndef LINUX
-#endif
-
-#include <fcntl.h>
-#include <unistd.h>
-
-// Timer stuff. Experimental.
-#include <time.h>
 #include <fluidsynth.h>
-#include <signal.h>
+#include <SFML/Audio.h>
 
 #include "z_zone.h"
-
 #include "i_system.h"
 #include "i_sound.h"
 #include "m_argv.h"
 #include "m_misc.h"
 #include "w_wad.h"
-
 #include "doomdef.h"
 
-
-
-// Update all 30 millisecs, approx. 30fps synchronized.
-// Linux resolution is allegedly 10 millisecs,
-//  scale is microseconds.
-#define SOUND_INTERVAL     500
-
-// Get the interrupt. Set duration in millisecs.
-int I_SoundSetTimer( int duration_of_tick );
-void I_SoundDelTimer( void );
-
-#include <SFML/Audio.h>
-
 #define SAMPLECOUNT		512
-#define SAMPLERATE		11025	// Hz
-#define MUSSAMPLERATE 44100
-#define SAMPLESIZE		2   	// 16bit
-
-
+#define SFX_SAMPLERATE 11025	// Hz
+#define MUS_SAMPLERATE 44100
 
 
 //fluidsynth stuff
@@ -85,11 +51,13 @@ fluid_player_t *player = NULL;
 sfSoundStream* midiStream;
 
 #define SFMIDI_LOADERFRAMES 2048
-static char midi[1024*1024];
+#define MIDI_BUFFERSIZE SFMIDI_LOADERFRAMES * 2
 
-const int outputSize = SFMIDI_LOADERFRAMES * 2;
-
+static unsigned char midi[1024*1024];
 int midiLength;
+
+//stores rendered MIDI output
+sfUint16* midiPCMData = NULL;
 
 
 // The actual lengths of all sound effects.
@@ -99,10 +67,7 @@ int 		lengths[NUMSFX];
 // This function loads the sound data from the WAD lump,
 //  for single sound.
 //
-void*
-getsfx
-( char*         sfxname,
-  int*          len )
+void* getsfx( char* sfxname, int* len)
 {
     unsigned char*      sfx;
     unsigned char*      paddedsfx;
@@ -132,18 +97,11 @@ getsfx
 
     // Allocate from zone memory.
     paddedsfx = (unsigned char*)malloc( paddedsize+8);
-    // ddt: (unsigned char *) realloc(sfx, paddedsize+8);
-    // This should interfere with zone memory handling,
-    //  which does not kick in in the soundserver.
 
     // Now copy and pad.
-    memcpy(  paddedsfx, sfx, size );
+    memcpy(paddedsfx, sfx, size );
     for (i=size ; i<paddedsize+8 ; i++)
         paddedsfx[i] = 128;
-
-    // Remove the cached lump.
-  //  Z_Free( sfx );
-    
     
     // Preserve padded length.
     *len = paddedsize;
@@ -151,15 +109,6 @@ getsfx
     // Return allocated padded data.
     return (void *) (paddedsfx + 8);
 }
-
-
-
-
-
-
-
-
-
  
 void I_SetSfxVolume(int volume)
 {
@@ -169,7 +118,6 @@ void I_SetSfxVolume(int volume)
 
 #include <SFML/Audio.h>
 sfSound* sounds[NUMSFX];
-// sfSound* music;
 
 int cursong = -1;
 
@@ -193,8 +141,7 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
 
 
 
-int
-I_StartSound
+int I_StartSound
 ( int		id,
   int		vol,
   int		sep,
@@ -202,26 +149,22 @@ I_StartSound
   int		priority )
 {
   sfSound* sound = sounds[id];
-  sfSound_setVolume(sound,  (100.0 / 15.0) * (float)vol);
+  sfSound_setVolume(sound,  (100.0 / snd_SfxVolume) * (float)vol);
   
   if(snd_DoPitchShift)
-  {
-    sfSound_setPitch(sound, (1.0 / 128.0) * (float)pitch);
-  }
+    sfSound_setPitch(sound, (1.0 / 255.0) * (float)pitch);
+
   sfSound_play(sound);
 }
 
 void I_UpdateSoundParams()
 {
   if(!snd_DoPitchShift)
-  {
     for(int i = 0; i < NUMSFX; i++)
-    {
       sfSound_setPitch(sounds[i], 1);
-    }
-  }
 }
 
+//TODO
 void I_StopSound (int handle)
 {
   // You need the handle returned by StartSound.
@@ -260,9 +203,6 @@ void I_ShutdownSound(void)
 }
 
 
-
-
-
 void
 I_InitSound()
 { 
@@ -274,22 +214,21 @@ I_InitSound()
       // Load data from WAD file.
       S_sfx[i].data = getsfx( S_sfx[i].name, &lengths[i] );
 
-      sfUint16 data[lengths[i]];
+      sfInt16 data[lengths[i]];
 
 
+
+      //TODO: try to remember what this does so I can make a better comment
       byte* raw = (byte*)S_sfx[i].data;
-
       for(int k = 0; k < lengths[i]; k++)
       {
-        data[k] = (short)((raw[k] - 128) << 8);
+        data[k] = (sfInt16)((raw[k] - 128) << 8);
       }
 
 
-      //convert to sfaudio
-      sfSoundBuffer* soundbuffer = sfSoundBuffer_createFromSamples(data, lengths[i], 1, SAMPLERATE);
+      sfSoundBuffer* soundbuffer = sfSoundBuffer_createFromSamples(data, lengths[i], 1, SFX_SAMPLERATE);
       sfSound* sound = sfSound_create();
       sfSound_setBuffer(sound, soundbuffer);
-
       sounds[i] = sound;
     }	
   }
@@ -303,17 +242,14 @@ void I_LoadSoundFont(char* filename)
   fluid_synth_sfload(synth, filename, 1);
 }
 
-
-static sfInt16* vec = NULL;
-
 sfBool sfMidiOnGetData(sfSoundStreamChunk* chunk, void* data)
 {
   chunk->sampleCount = SFMIDI_LOADERFRAMES;
 
-  int read = fluid_synth_write_s16(synth, SFMIDI_LOADERFRAMES / 2, vec, 0, 2, vec, 1, 2);
+  fluid_synth_write_s16(synth, SFMIDI_LOADERFRAMES / 2, midiPCMData, 0, 2, midiPCMData, 1, 2);
 
   if(!chunk->samples)
-    chunk->samples = vec;
+    chunk->samples = midiPCMData;
 }
 
 void sfMidiOnSeek(sfTime time, void* data)
@@ -325,17 +261,18 @@ void I_InitMusic(void)
 {
   settings = new_fluid_settings();
 
-  midiStream = sfSoundStream_create(&sfMidiOnGetData, &sfMidiOnSeek, 2, MUSSAMPLERATE, NULL);  
+  midiStream = sfSoundStream_create(&sfMidiOnGetData, &sfMidiOnSeek, 2, MUS_SAMPLERATE, NULL);  
   
   synth = new_fluid_synth(settings);
-  fluid_synth_set_sample_rate(synth, MUSSAMPLERATE);
+  fluid_synth_set_sample_rate(synth, MUS_SAMPLERATE);
   
 
   fluid_settings_setstr(settings, "audio.driver", "alsa");
   fluid_settings_setint(settings, "audio.period-size", 0);
-  vec = malloc(outputSize);
+  midiPCMData = malloc(MIDI_BUFFERSIZE);
 }
 
+//TODO
 void I_ShutdownMusic(void)
 {
   
@@ -360,14 +297,10 @@ void I_PlaySong(int handle, int looping)
 
   sfSoundStream_play(midiStream); 
   sfSoundStream_setLoop(midiStream, looping);
-
-
-  // fluid_player_join(player);
 }
 
 void I_PauseSong (int handle)
 {
-  // sfSound_pause(music);
   sfSoundStream_pause(midiStream);
 }
 
@@ -375,20 +308,12 @@ void I_PauseSong (int handle)
 
 void I_ResumeSong (int handle)
 {
-  // sfSound_play(music);
+  sfSoundStream_play(midiStream);
 }
 
 void I_StopSong(int handle)
 {
-  // sfSound_stop(music);
   sfSoundStream_stop(midiStream);
-  // fluid_player_join(player);
-}
-
-void I_UnRegisterSong(int handle)
-{
-  // UNUSED.
-  handle = 0;
 }
 
 char musheader[3] = {'M','U','S'};

@@ -94,8 +94,6 @@ I_PlaySong
 // Stops a song over 3 seconds.
 void I_StopSong(int handle);
 // See above (register), then think backwards
-void I_UnRegisterSong(int handle);
-
 
 
 #endif

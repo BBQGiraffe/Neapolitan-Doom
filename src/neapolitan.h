@@ -26,6 +26,7 @@
 #define __NEAPOLITAN__
 
 #include <SFML/Window.h>
+
 #include "doomtype.h"
 void N_WriteConfig();
 void N_LoadConfig(void);

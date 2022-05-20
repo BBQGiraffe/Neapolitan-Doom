@@ -45,7 +45,7 @@
 fluid_settings_t *settings;
 fluid_synth_t *synth;
 fluid_audio_driver_t *adriver;
-fluid_player_t *player = NULL;
+fluid_player_t *player;
 sfSoundStream* midiStream;
 
 #define SFMIDI_LOADERFRAMES 2048
@@ -117,6 +117,11 @@ void I_SetSfxVolume(int volume)
 #include <SFML/Audio.h>
 sfSound* sounds[NUMSFX];
 
+
+#define NUMCHANNELS 32
+sfSound* soundChannels[NUMSFX];
+sfSoundBuffer* soundBuffers[NUMSFX];
+
 int cursong = -1;
 
 void I_SetMusicVolume(int volume)
@@ -137,7 +142,16 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
+int getfreechannel()
+{
+  for(int i = 0; i < NUMCHANNELS; i++)
+    if(soundChannels[i])
+      continue;
+    else
+      return i;
 
+  return -1;
+}
 
 int I_StartSound
 ( int		id,
@@ -146,13 +160,23 @@ int I_StartSound
   int		pitch,
   int		priority )
 {
-  sfSound* sound = sounds[id];
+  int channel = getfreechannel();
+
+  sfSoundBuffer* buffer = soundBuffers[id];
+  sfSound* sound = sfSound_create();
+  sfSound_setBuffer(sound, buffer);
+
+
+  // sfSound* sound = sounds[id];
   sfSound_setVolume(sound,  (100.0 / snd_SfxVolume) * (float)vol);
   
   if(snd_DoPitchShift)
     sfSound_setPitch(sound, (1.0 / 255.0) * (float)pitch);
 
   sfSound_play(sound);
+
+  soundChannels[channel] = sound;
+  return true;
 }
 
 void I_UpdateSoundParams()
@@ -185,8 +209,20 @@ int I_SoundIsPlaying(int handle)
 void I_UpdateSound( void )
 {
   int doneplaying = fluid_player_get_status(player) == FLUID_PLAYER_DONE;
+  
+  for(int i = 0; i < NUMCHANNELS; i++)
+  {
+    if(soundChannels[i])
+    {
+      if(sfSound_getStatus(soundChannels[i]) == sfStopped)
+      {
+        sfSound_destroy(soundChannels[i]);
+        soundChannels[i] = NULL;
+      }
+    }
+  }
 
-
+  
   if(doneplaying)
   {
     fluid_player_seek(player, 0);
@@ -219,15 +255,14 @@ I_InitSound()
       //TODO: try to remember what this does so I can make a better comment
       byte* raw = (byte*)S_sfx[i].data;
       for(int k = 0; k < lengths[i]; k++)
-      {
         data[k] = (sfInt16)((raw[k] - 128) << 8);
-      }
 
 
       sfSoundBuffer* soundbuffer = sfSoundBuffer_createFromSamples(data, lengths[i], 1, SFX_SAMPLERATE);
-      sfSound* sound = sfSound_create();
-      sfSound_setBuffer(sound, soundbuffer);
-      sounds[i] = sound;
+      // sfSound* sound = sfSound_create();
+      // sfSound_setBuffer(sound, soundbuffer);
+      // sounds[i] = sound;
+      soundBuffers[i] = soundbuffer;
     }	
   }
 
@@ -319,12 +354,9 @@ boolean IsMus(char* data)
 {
   boolean mus = true;
   for(int i = 0; i < 3; i++)
-  {
     if(data[i] != musheader[i])
-    {
       mus = false;
-    }
-  }
+      
   return mus;
 }
 

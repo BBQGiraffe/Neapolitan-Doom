@@ -113,11 +113,6 @@ void I_SetSfxVolume(int volume)
   snd_SfxVolume = volume;
 }
 
-
-#include <SFML/Audio.h>
-sfSound* sounds[NUMSFX];
-
-
 #define NUMCHANNELS 32
 sfSound* soundChannels[NUMSFX];
 sfSoundBuffer* soundBuffers[NUMSFX];
@@ -142,6 +137,9 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
+
+
+//TODO: add a max channels option to neapolitan.conf
 int getfreechannel()
 {
   for(int i = 0; i < NUMCHANNELS; i++)
@@ -161,6 +159,12 @@ int I_StartSound
   int		priority )
 {
   int channel = getfreechannel();
+  
+  if(channel == -1)
+  {
+    printf("I_StartSound: could not find free channel\n");
+    return false;
+  }
 
   sfSoundBuffer* buffer = soundBuffers[id];
   sfSound* sound = sfSound_create();
@@ -182,8 +186,9 @@ int I_StartSound
 void I_UpdateSoundParams()
 {
   if(!snd_DoPitchShift)
-    for(int i = 0; i < NUMSFX; i++)
-      sfSound_setPitch(sounds[i], 1);
+    for(int i = 0; i < NUMCHANNELS; i++)
+      if(soundChannels[i])
+        sfSound_setPitch(soundChannels[i], 1);
 }
 
 //TODO

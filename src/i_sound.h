@@ -29,6 +29,7 @@
 #include "sounds.h"
 
 
+const char* soundfontName;
 
 // Init at program start...
 void I_InitSound();

@@ -1940,8 +1940,6 @@ void M_Ticker(void)
 //
 void M_Init(void)
 {
-    N_LoadConfig();
-    N_RebindKeys();
     currentMenu = &MainDef;
     menuactive = 0;
     itemOn = currentMenu->lastOn;

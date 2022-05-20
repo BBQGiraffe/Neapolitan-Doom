@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "neapolitan.h"
 #include "m_keybinds.h"
+#include "i_sound.h"
 
 char bindnames[7][32] = {"Forward", "Backwards", "Left", "Right", "Use", "Fire", "Run"};
 boolean useMouse = 0;
@@ -127,6 +128,12 @@ void N_WriteConfig()
     cJSON_AddNumberToObject(json, "key_run", key_speed);
     cJSON_AddBoolToObject(json, "mouse_look", useMouse);
     cJSON_AddBoolToObject(json, "monster_height_fix", fixInfiniteMonsterHeight);
+
+    cJSON_AddStringToObject(json, "soundfont", soundfontName);
+    cJSON_AddNumberToObject(json, "sfxVolume", snd_SfxVolume);
+    cJSON_AddNumberToObject(json, "musVolume", snd_MusicVolume);
+
+
     char* text = cJSON_Print(json);
 
     FILE* file = fopen(NEAPOLITAN_SAVEFILE, "w");
@@ -171,6 +178,12 @@ void N_LoadConfig(void)
 
     useMouse = cJSON_IsTrue(cJSON_GetObjectItem(json, "mouse_look"));
     fixInfiniteMonsterHeight =  cJSON_IsTrue(cJSON_GetObjectItem(json, "monster_height_fix"));
+
+    soundfontName = cJSON_GetObjectItem(json, "soundfont")->valuestring;
+    snd_SfxVolume = cJSON_GetObjectItem(json, "sfxVolume")->valueint;
+
+    I_LoadSoundFont(soundfontName);
+    I_SetMusicVolume(cJSON_GetObjectItem(json, "musVolume")->valueint);
 
     N_RebindKeys();
 }

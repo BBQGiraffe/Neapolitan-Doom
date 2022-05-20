@@ -175,12 +175,26 @@ int I_StartSound
 
 
   // sfSound* sound = sounds[id];
-  sfSound_setVolume(sound,  (100.0 / snd_SfxVolume) * (float)vol);
+  sfSound_setVolume(sound,  (100.0 / 15) * (float)vol);
   
   if(snd_DoPitchShift)
     sfSound_setPitch(sound, (1.0 / 255.0) * (float)pitch);
 
   sfSound_play(sound);
+
+  //why the fuck does SFML have to make panning so dumb?
+
+
+  float panAmount = -(1.0 - (1.0 / 127.0) * sep);
+
+  sfVector3f audioPosition = 
+  {
+    .x = panAmount,
+    .y = 0,
+    .z = panAmount < 0.f ? -panAmount - 1.f : panAmount - 1.f
+  };
+
+  sfSound_setPosition(sound, audioPosition);
 
   soundChannels[channel] = sound;
   return true;
@@ -293,6 +307,7 @@ I_InitSound()
 
 void I_LoadSoundFont(char* filename)
 {
+  soundfontName = filename;
   fluid_synth_sfload(synth, filename, 1);
 }
 

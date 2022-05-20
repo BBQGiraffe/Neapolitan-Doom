@@ -360,20 +360,6 @@ void D_DoomLoop (void)
 	
     I_InitGraphics ();
 
-	//check for custom sound font
-	int j = M_CheckParm("-soundfont");
-	if(j)
-	{
-		char filename[64];
-		sprintf(filename, myargv[j+1]);
-		printf("set soundfont to %s\n", filename);
-		I_LoadSoundFont(filename);
-	}
-	else
-	{
-		I_LoadSoundFont("chorium.sf2");
-	}
-
 	snd_DoPitchShift = M_CheckParm("-pitch");
 	if(snd_DoPitchShift)
     {
@@ -924,7 +910,7 @@ void D_DoomMain (void)
 	sidemove[0] = sidemove[0]*scale/100;
 	sidemove[1] = sidemove[1]*scale/100;
     }
-    
+
     // add any files specified on the command line with -file wadfile
     // to the wad list
     //
@@ -1124,6 +1110,9 @@ void D_DoomMain (void)
 
     printf ("I_Init: Setting up machine state.\n");
     I_Init ();
+
+	N_LoadConfig();
+    N_RebindKeys();
 
     printf ("D_CheckNetGame: Checking network game status.\n");
     D_CheckNetGame ();

@@ -117,6 +117,11 @@ void I_SetSfxVolume(int volume)
 sfSound* soundChannels[NUMSFX];
 sfSoundBuffer* soundBuffers[NUMSFX];
 
+
+#define NUMCHANNELS 32
+sfSound* soundChannels[NUMSFX];
+sfSoundBuffer* soundBuffers[NUMSFX];
+
 int cursong = -1;
 
 void I_SetMusicVolume(int volume)
@@ -137,7 +142,16 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
+int getfreechannel()
+{
+  for(int i = 0; i < NUMCHANNELS; i++)
+    if(soundChannels[i])
+      continue;
+    else
+      return i;
 
+  return -1;
+}
 
 //TODO: add a max channels option to neapolitan.conf
 int getfreechannel()

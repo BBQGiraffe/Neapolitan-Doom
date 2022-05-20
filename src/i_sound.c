@@ -214,10 +214,23 @@ int I_SoundIsPlaying(int handle)
 }
 
 
+//why is fluidsynth garbage
+void ResetFluidsynthPlayer()
+{
+  if(player)
+    delete_fluid_player(player);
+
+  player = new_fluid_player(synth);
+
+  fluid_player_add_mem(player, midi, midiLength);
+  fluid_player_play(player);
+}
+
+
 void I_UpdateSound( void )
 {
   int doneplaying = fluid_player_get_status(player) == FLUID_PLAYER_DONE;
-  
+
   for(int i = 0; i < NUMCHANNELS; i++)
   {
     if(soundChannels[i])
@@ -233,9 +246,12 @@ void I_UpdateSound( void )
   
   if(doneplaying)
   {
-    fluid_player_seek(player, 0);
-    fluid_player_play(player);
-    sfSoundStream_play(midiStream); 
+    ResetFluidsynthPlayer();
+    // fluid_player_stop(player);
+    // fluid_player_seek(player, 0);
+
+    // printf("restarting\n", fluid_player_get_status(player));
+    // fluid_player_play(player);
   }
 }
 
@@ -267,9 +283,6 @@ I_InitSound()
 
 
       sfSoundBuffer* soundbuffer = sfSoundBuffer_createFromSamples(data, lengths[i], 1, SFX_SAMPLERATE);
-      // sfSound* sound = sfSound_create();
-      // sfSound_setBuffer(sound, soundbuffer);
-      // sounds[i] = sound;
       soundBuffers[i] = soundbuffer;
     }	
   }
@@ -328,13 +341,7 @@ int songid = 0;
 
 void I_PlaySong(int handle, int looping)
 {
-  if(player)
-    delete_fluid_player(player);
-
-  player = new_fluid_player(synth);
-
-  fluid_player_add_mem(player, midi, midiLength);
-  fluid_player_play(player);
+  ResetFluidsynthPlayer();
 
   sfSoundStream_play(midiStream); 
   sfSoundStream_setLoop(midiStream, looping);

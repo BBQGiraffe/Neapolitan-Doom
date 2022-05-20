@@ -142,17 +142,6 @@ int I_GetSfxLumpNum(sfxinfo_t* sfx)
     return W_GetNumForName(namebuf);
 }
 
-int getfreechannel()
-{
-  for(int i = 0; i < NUMCHANNELS; i++)
-    if(soundChannels[i])
-      continue;
-    else
-      return i;
-
-  return -1;
-}
-
 //TODO: add a max channels option to neapolitan.conf
 int getfreechannel()
 {

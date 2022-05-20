@@ -19,7 +19,7 @@
 // DESCRIPTION:  Neapolitan Doom specific vars
 //
 //-----------------------------------------------------------------------------
-#define NEAPOLITAN_VERSION "0.02"
+#define NEAPOLITAN_VERSION "0.03"
 #define NEAPOLITAN_SAVEFILE "neapolitan.conf"
 
 #ifndef __NEAPOLITAN__

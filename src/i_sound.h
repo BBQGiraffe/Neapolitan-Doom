@@ -40,7 +40,7 @@ void I_UpdateSound(void);
 void I_ShutdownSound(void);
 
 void I_UpdateSoundParams();
-
+int getfreechannel();
 
 //
 //  SFX I/O

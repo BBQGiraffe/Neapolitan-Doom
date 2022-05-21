@@ -162,7 +162,6 @@ int I_StartSound
   int		priority )
 {
   int channel = getfreechannel();
-  
   if(channel == -1)
   {
     printf("I_StartSound: could not find free channel\n");
@@ -172,7 +171,6 @@ int I_StartSound
   sfSoundBuffer* buffer = soundBuffers[id];
   sfSound* sound = sfSound_create();
   sfSound_setBuffer(sound, buffer);
-
 
   // sfSound* sound = sounds[id];
   sfSound_setVolume(sound,  (100.0 / 15) * (float)vol);
@@ -197,7 +195,7 @@ int I_StartSound
   sfSound_setPosition(sound, audioPosition);
 
   soundChannels[channel] = sound;
-  return true;
+  return 1;
 }
 
 void I_UpdateSoundParams()
@@ -228,7 +226,7 @@ int I_SoundIsPlaying(int handle)
 }
 
 
-//why is fluidsynth garbage
+//delete and recreate the player because Fluidsynth is awful
 void ResetFluidsynthPlayer()
 {
   if(player)
@@ -261,11 +259,6 @@ void I_UpdateSound( void )
   if(doneplaying)
   {
     ResetFluidsynthPlayer();
-    // fluid_player_stop(player);
-    // fluid_player_seek(player, 0);
-
-    // printf("restarting\n", fluid_player_get_status(player));
-    // fluid_player_play(player);
   }
 }
 

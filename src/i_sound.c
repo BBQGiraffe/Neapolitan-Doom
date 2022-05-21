@@ -172,7 +172,6 @@ int I_StartSound
   sfSound* sound = sfSound_create();
   sfSound_setBuffer(sound, buffer);
 
-  // sfSound* sound = sounds[id];
   sfSound_setVolume(sound,  (100.0 / 15) * (float)vol);
   
   if(snd_DoPitchShift)
@@ -181,7 +180,6 @@ int I_StartSound
   sfSound_play(sound);
 
   //why the fuck does SFML have to make panning so dumb?
-
 
   float panAmount = -(1.0 - (1.0 / 127.0) * sep);
 

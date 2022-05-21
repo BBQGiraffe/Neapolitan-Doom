@@ -153,6 +153,8 @@ void N_RebindKeys()
     key_use = keybinds[6];
 }
 
+#define DEFAULT_SOUNDFONT "chorium.sf2"
+
 void N_LoadConfig(void)
 {
     if(access(NEAPOLITAN_SAVEFILE, F_OK))
@@ -168,22 +170,43 @@ void N_LoadConfig(void)
     fclose(file);
     cJSON* json = cJSON_Parse(textbuffer);
 
-    keybinds[0] = key_up = cJSON_GetObjectItem(json, "key_up")->valueint;
-    keybinds[1] = key_down = cJSON_GetObjectItem(json, "key_down")->valueint;
-    keybinds[2] = key_left = cJSON_GetObjectItem(json, "key_left")->valueint;
-    keybinds[3] = key_right = cJSON_GetObjectItem(json, "key_right")->valueint;
-    keybinds[4] = key_fire = cJSON_GetObjectItem(json, "key_fire")->valueint;
-    keybinds[5] = key_speed = cJSON_GetObjectItem(json, "key_run")->valueint;
-    keybinds[6] = key_use = cJSON_GetObjectItem(json, "key_use")->valueint;
 
-    useMouse = cJSON_IsTrue(cJSON_GetObjectItem(json, "mouse_look"));
-    fixInfiniteMonsterHeight =  cJSON_IsTrue(cJSON_GetObjectItem(json, "monster_height_fix"));
+    //I love deserialization
+    cJSON* j_key_up = cJSON_GetObjectItem(json, "key_up");
+    cJSON* j_key_down = cJSON_GetObjectItem(json, "key_down");
+    cJSON* j_key_left = cJSON_GetObjectItem(json, "key_right");
+    cJSON* j_key_right = cJSON_GetObjectItem(json, "key_right");
 
-    soundfontName = cJSON_GetObjectItem(json, "soundfont")->valuestring;
-    snd_SfxVolume = cJSON_GetObjectItem(json, "sfxVolume")->valueint;
+    cJSON* j_key_fire = cJSON_GetObjectItem(json, "key_fire");
+    cJSON* j_key_speed = cJSON_GetObjectItem(json, "key_speed");
+    cJSON* j_key_use = cJSON_GetObjectItem(json, "key_use");
+
+
+    cJSON* j_use_mouse = cJSON_GetObjectItem(json, "mouse_look");
+    cJSON* j_fix_monster_height = cJSON_GetObjectItem(json, "monster_height_fix");
+    cJSON* j_soundfont = cJSON_GetObjectItem(json, "soundfont");
+    cJSON* j_sfx_volume = cJSON_GetObjectItem(json, "sfxVolume");
+    cJSON* j_mus_volume = cJSON_GetObjectItem(json, "musVolume");
+
+    //if json element for keybind is NULL, set it to default SFML key
+    keybinds[0] = key_up = j_key_up ? j_key_up->valueint : KEY_UPARROW;
+    keybinds[1] = key_down = j_key_down ? j_key_down->valueint : KEY_DOWNARROW;
+    keybinds[2] = key_left = j_key_left ? j_key_left->valueint : KEY_LEFTARROW;
+    keybinds[3] = key_right = j_key_right ? j_key_right->valueint : KEY_RIGHTARROW;
+    keybinds[4] = key_fire = j_key_fire ? j_key_fire->valueint : KEY_RCTRL;
+    keybinds[5] = key_speed = j_key_speed ? j_key_speed->valueint : KEY_RSHIFT;
+    keybinds[6] = key_use = j_key_use ? j_key_use->valueint : KEY_SPACE;
+
+    useMouse = j_use_mouse ? cJSON_IsTrue(j_use_mouse) : false;
+    fixInfiniteMonsterHeight = j_fix_monster_height ? cJSON_IsTrue(j_fix_monster_height) : false;
+    
+    soundfontName = j_soundfont ? j_soundfont->valuestring : DEFAULT_SOUNDFONT;
+
+    snd_SfxVolume = j_sfx_volume ? j_soundfont->valueint : 15;
+    snd_MusicVolume = j_sfx_volume ? j_soundfont->valueint : 15;
 
     I_LoadSoundFont(soundfontName);
-    I_SetMusicVolume(cJSON_GetObjectItem(json, "musVolume")->valueint);
+    I_SetMusicVolume(snd_MusicVolume);
 
     N_RebindKeys();
 }
